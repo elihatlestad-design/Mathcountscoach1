@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MathCounts Coach</title>
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #0b0f1f;
+  color: #f2f2f2;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+.game {
+  background: #171c38;
+  padding: 25px;
+  border-radius: 14px;
+  width: 500px;
+}
+h1 { text-align: center; }
+.problem {
+  font-size: 20px;
+  margin: 15px 0;
+  text-align: center;
+}
+input, select, button {
+  width: 100%;
+  padding: 8px;
+  margin-top: 6px;
+  font-size: 15px;
+}
+button {
+  background: #4cafef;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.skip { background: #ffcc66; color: #000; }
+.stats {
+  margin-top: 10px;
+  text-align: center;
+}
+.explain {
+  margin-top: 10px;
+  padding: 8px;
+  background: #10142e;
+  border-radius: 8px;
+  display: none;
+}
+.scoreboard {
+  margin-top: 10px;
+  font-size: 14px;
+}
+</style>
+</head>
+<body>
+
+<div class="game">
+<h1>MathCounts Coach</h1>
+
+<select id="category">
+  <option value="vocab">Vocabulary</option>
+  <option value="arithmetic">Arithmetic</option>
+  <option value="fractions">Fractions</option>
+  <option value="algebra">Algebra</option>
+</select>
+
+<div class="problem" id="problem">Press Start</div>
+<input id="answer" disabled placeholder="Answer">
+
+<button onclick="submit()">Submit</button>
+<button class="skip" onclick="dontKnow()">I Don’t Know</button>
+<button onclick="start()">Start / Reset</button>
+
+<div class="scoreboard">
+✅ Correct: <span id="correct">0</span> |
+❌ Wrong: <span id="wrong">0</span> |
+❓ Skipped: <span id="skipped">0</span>
+</div>
+
+<div class="explain" id="explain"></div>
+</div>
+
+<script>
+let current;
+let correct = 0, wrong = 0, skipped = 0;
+
+const vocab = [
+{q:"A number that divides evenly into another",a:"factor",e:"A factor divides with no remainder."},
+{q:"The product of a number and an integer",a:"multiple",e:"Multiples are results of multiplication."},
+{q:"A number greater than 1 with exactly two factors",a:"prime",e:"Only 1 and itself."},
+{q:"A whole number with more than two factors",a:"composite",e:"Not prime."},
+{q:"Positive and negative whole numbers and zero",a:"integer",e:"Includes negatives and zero."},
+{q:"A number that can be written as a fraction",a:"rational",e:"Fractions and integers are rational."},
+{q:"Numbers that follow one another",a:"consecutive",e:"Like 5, 6, 7."},
+{q:"Distance around a shape",a:"perimeter",e:"Add all sides."},
+{q:"Space inside a 2D shape",a:"area",e:"Measured in square units."},
+{q:"Space inside a 3D object",a:"volume",e:"Measured in cubic units."},
+{q:"Distance around a circle",a:"circumference",e:"Circle version of perimeter."},
+{q:"Distance from center to circle",a:"radius",e:"Half the diameter."},
+{q:"Distance across a circle through center",a:"diameter",e:"Twice the radius."},
+{q:"Middle number in a set",a:"median",e:"Order first, then find middle."},
+{q:"Most common value",a:"mode",e:"Appears most often."},
+{q:"Average",a:"mean",e:"Add and divide."},
+{q:"Difference between largest and smallest",a:"range",e:"Max minus min."},
+{q:"Comparison of two quantities",a:"ratio",e:"Written like 3:2."},
+{q:"An equation stating two ratios are equal",a:"proportion",e:"Ratios set equal."},
+{q:"Out of 100",a:"percent",e:"Means per hundred."}
+];
+
+function rand(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+function generate() {
+  const cat = document.getElementById("category").value;
+  let q,a,e;
+
+  if(cat==="vocab"){
+    let v = rand(vocab);
+    q=v.q; a=v.a; e=v.e;
+  }
+
+  if(cat==="arithmetic"){
+    let x=Math.floor(Math.random()*100)+20;
+    let y=Math.floor(Math.random()*50)+10;
+    q=`${x} − ${y}`; a=x-y; e="Subtract carefully.";
+  }
+
+  if(cat==="fractions"){
+    let a1=1+Math.floor(Math.random()*8);
+    let b1=2+Math.floor(Math.random()*7);
+    let a2=1+Math.floor(Math.random()*8);
+    let b2=2+Math.floor(Math.random()*7);
+    q=`${a1}/${b1} + ${a2}/${b2}`;
+    a=(a1*b2+a2*b1)/(b1*b2);
+    e="Find common denominator, then add.";
+  }
+
+  if(cat==="algebra"){
+    let m=2+Math.floor(Math.random()*6);
+    let b=1+Math.floor(Math.random()*10);
+    let c=10+Math.floor(Math.random()*40);
+    q=`${m}x + ${b} = ${c}`;
+    a=(c-b)/m;
+    e="Subtract, then divide.";
+  }
+
+  current={a:a.toString().toLowerCase(),e:e};
+  document.getElementById("problem").textContent=q;
+  document.getElementById("explain").style.display="none";
+}
+
+function start(){
+  correct=wrong=skipped=0;
+  update();
+  document.getElementById("answer").disabled=false;
+  generate();
+}
+
+function submit(){
+  let user=document.getElementById("answer").value.toLowerCase();
+  if(user==current.a || Math.abs(user-current.a)<0.01){
+    correct++;
+  } else {
+    wrong++;
+    showExplain();
+  }
+  update();
+  document.getElementById("answer").value="";
+  generate();
+}
+
+function dontKnow(){
+  skipped++;
+  showExplain();
+  update();
+  generate();
+}
+
+function showExplain(){
+  let box=document.getElementById("explain");
+  box.textContent=`Answer: ${current.a} | ${current.e}`;
+  box.style.display="block";
+}
+
+function update(){
+  document.getElementById("correct").textContent=correct;
+  document.getElementById("wrong").textContent=wrong;
+  document.getElementById("skipped").textContent=skipped;
+}
+</script>
+
+</body>
+</html>
